@@ -1,14 +1,34 @@
-FROM python:3.10.4-slim-buster
-RUN apt update && apt upgrade -y
-RUN apt-get install git curl python3-pip ffmpeg -y
-RUN apt-get -y install git
-RUN apt-get install -y wget python3-pip curl bash neofetch ffmpeg software-properties-common
-COPY requirements.txt .
+# ✅ Updated & Supported Base Image
+FROM python:3.10-slim-bullseye
 
-RUN pip3 install wheel
-RUN pip3 install --no-cache-dir -U -r requirements.txt
+# 🧹 Reduce interaction & avoid prompts during install
+ENV DEBIAN_FRONTEND=noninteractive
+
+# ✅ System Packages Install (combined for faster layers)
+RUN apt update && \
+    apt upgrade -y && \
+    apt install -y \
+        git \
+        curl \
+        wget \
+        bash \
+        neofetch \
+        ffmpeg \
+        python3-pip \
+        software-properties-common && \
+    apt clean && rm -rf /var/lib/apt/lists/*
+
+# ✅ Python requirements
+COPY requirements.txt .
+RUN pip install --upgrade pip wheel
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ✅ App setup
 WORKDIR /app
 COPY . .
+
+# ✅ Expose for Render/Flask
 EXPOSE 8000
 
+# ✅ Start Flask + custom script
 CMD flask run -h 0.0.0.0 -p 8000 & python3 -m devgagan
